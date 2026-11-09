@@ -1,0 +1,34 @@
+]633;E;while read -r selector\x3b do   echo "================ $selector"\x3b   cast 4byte "$selector" 2>/dev/null\x3b done < module3-dispatch-selectors.txt > module3-dispatch-signatures.txt;79da9463-69e2-4aff-b03e-86b6329f202a]633;C================ 0x03314efa
+shares()
+================ 0x0e57d4ce
+recipients()
+================ 0x17edaba0
+GENERATION()
+================ 0x249d39e9
+BPS()
+================ 0x3e0dc34e
+poolId()
+================ 0x3f0d861a
+rotate(address)
+================ 0x4ef5e645
+HOLDERS()
+================ 0x6b8357ac
+collect(address,uint256)
+================ 0x6cca452e
+================ 0x6f791d29
+isMaster()
+================ 0x999b93af
+quote()
+================ 0xa6980ce2
+MAX_RECIPIENTS()
+================ 0xb47a9bfa
+feeSource()
+================ 0xc45a0155
+================ 0xdf18e047
+owed(address)
+================ 0xe4fc6b6d
+distribute()
+================ 0xe7fa9f7d
+totalOwed()
+================ 0xfc0c546a
+token()

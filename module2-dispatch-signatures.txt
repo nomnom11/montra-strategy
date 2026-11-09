@@ -1,0 +1,111 @@
+]633;E;while read -r selector\x3b do   echo "================ $selector"\x3b   cast 4byte "$selector" 2>/dev/null\x3b done < module2-dispatch-selectors.txt > module2-dispatch-signatures.txt;79da9463-69e2-4aff-b03e-86b6329f202a]633;C================ 0x02d05d3f
+creator()
+================ 0x03fd2a45
+DEAD()
+================ 0x06fdde03
+name()
+================ 0x070c959f
+================ 0x095ea7b3
+approve(address,uint256)
+================ 0x0ac6702a
+rewardAsset()
+================ 0x10f5c407
+taxRatePips()
+================ 0x126bc587
+================ 0x17edaba0
+GENERATION()
+================ 0x18160ddd
+totalSupply()
+================ 0x23b872dd
+transferFrom(address,address,uint256)
+================ 0x24024efd
+sellTaxRate()
+================ 0x2778ca1c
+================ 0x2b68f2a5
+PUSH_GAS()
+================ 0x2c0e0d1e
+pushFloor()
+================ 0x313ce567
+decimals()
+================ 0x372500ab
+claimRewards()
+================ 0x375b74c3
+custodian()
+================ 0x3c130d90
+tokenURI()
+================ 0x3e0dc34e
+poolId()
+================ 0x3eacd2f8
+taxBps()
+================ 0x42966c68
+burn(uint256)
+collate_propagate_storage(bytes16)
+================ 0x44fe4526
+parkedRewards()
+================ 0x4d5428a7
+totalRewardsReceived()
+================ 0x4ef5e645
+HOLDERS()
+================ 0x53cd512a
+socials()
+================ 0x64cbe5f9
+streamDuration()
+================ 0x67605787
+metaURI()
+================ 0x691f224f
+buyTaxRate()
+================ 0x6ade07b0
+eligibleSupply()
+================ 0x6d4fc357
+MIN_STREAM()
+================ 0x70a08231
+balanceOf(address)
+================ 0x7284e416
+description()
+================ 0x7b0a47ee
+rewardRate()
+================ 0x7f5a7c7b
+hook()
+================ 0x7f88b4f8
+================ 0x8f19d4bb
+MAX_STREAM()
+================ 0x9172bab3
+streaming()
+================ 0x95d89b41
+symbol()
+================ 0x9bb28645
+================ 0xa0f76cce
+PIPS_PER_BP()
+================ 0xa34b0f76
+totalRewardsClaimed()
+================ 0xa9059cbb
+transfer(address,uint256)
+================ 0xabb1dc44
+getTokenInfo()
+================ 0xc0463711
+lastUpdate()
+================ 0xc45a0155
+================ 0xcafc8dfd
+initialize(string,string,string,address,uint256,address)
+================ 0xcba0e996
+isExcluded(address)
+================ 0xd00efb2f
+launchBlock()
+================ 0xd5f39488
+deployer()
+================ 0xdd62ed3e
+allowance(address,address)
+================ 0xe4fc6b6d
+distribute()
+================ 0xe6bb9c87
+================ 0xe8a3d485
+contractURI()
+================ 0xe9ee2fa9
+rewardIndex()
+================ 0xebe2b12b
+periodFinish()
+================ 0xef5cfb8c
+claimRewards(address)
+================ 0xf6ceefa2
+pushRewards(address[])
+================ 0x3b9aca00

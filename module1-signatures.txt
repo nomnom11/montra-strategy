@@ -1,0 +1,79 @@
+]633;E;while read -r selector\x3b do   echo "================ $selector"\x3b   cast 4byte "$selector" 2>/dev/null\x3b done < module1-selectors.txt > module1-signatures.txt;79da9463-69e2-4aff-b03e-86b6329f202a]633;C================ 0x0476982d
+================ 0x048bd8b9
+================ 0x07cdceab
+================ 0x07fb27ef
+================ 0x0852cd8d
+================ 0x08568627
+================ 0x08627e39
+================ 0x0885f732
+poolConfig(bytes32)
+================ 0x09bfa4a3
+AmountNotOwed(uint256,uint256)
+================ 0x0ab714fb
+================ 0x0b0d9c09
+take(address,address,uint256)
+================ 0x0bc2c5df
+================ 0x0d4d9cf7
+================ 0x0ea075bf
+================ 0x0fafcddb
+================ 0x118cdaa7
+OwnableUnauthorizedAccount(address)
+================ 0x13b0827d
+================ 0x15d7892d
+================ 0x17d5c965
+================ 0x1966391b
+================ 0x1a69cf65
+================ 0x1d769828
+collectProtocol(address)
+================ 0x1e2eaeaf
+extsload(bytes32)
+================ 0x1fa571dd
+================ 0x20a61e89
+================ 0x23b872dd
+transferFrom(address,address,uint256)
+================ 0x248eb4ec
+sweep(bytes32)
+================ 0x259982e5
+beforeAddLiquidity(address,(address,address,uint24,int24,address),(int24,int24,int256,bytes32),bytes)
+================ 0x26363b73
+FeeOutOfBounds()
+================ 0x29610465
+================ 0x2b00a33d
+================ 0x2d35e7ed
+================ 0x321ac0ef
+updateRecipient(bytes32,address)
+================ 0x39c5dec7
+setProtocolVault(address)
+================ 0x3d2cec6f
+================ 0x3e75c024
+================ 0x3eb35279
+================ 0x3ee5aeb5
+ReentrancyGuardReentrantCall()
+================ 0x3eeac6dd
+InvalidStartTick(int24)
+================ 0x43000821
+================ 0x45c3193d
+================ 0x48c89491
+unlock(bytes)
+================ 0x4e487b71
+Panic(uint256)
+================ 0x4fba0200
+MODULE_GAS()
+================ 0x50da26a3
+================ 0x5274afe7
+SafeERC20FailedOperation(address)
+================ 0x52759651
+updateDynamicLPFee((address,address,uint24,int24,address),uint24)
+================ 0x552117ac
+pendingProtocol(bytes32)
+================ 0x570c1085
+================ 0x575e24b4
+beforeSwap(address,(address,address,uint24,int24,address),(bool,int256,uint160),bytes)
+================ 0x57b980d7
+================ 0x586d3357
+NotRecipient()
+================ 0x5a9249e6
+protocolVault()
+================ 0x5c93ff2f
+================ 0x5fe80c23
+================ 0x61e512f6
