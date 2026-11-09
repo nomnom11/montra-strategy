@@ -2,6 +2,7 @@ import {
   createPublicClient,
   defineChain,
   http,
+  stringToHex,
   type Abi,
   type Address,
   type Hex
@@ -9,8 +10,16 @@ import {
 
 import factoryAbiJson from "./abis/LaunchFactory.json";
 
-const FACTORY = "0x38D3ef3A06D18fA3286Fb5dEAfe611be725fcD15" as const;
+const REGISTRY = "0xF1E2FA75422F889e565F3142bdbf60B28dce2aa7" as const;
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+const registryAbi = [{
+  type: "function",
+  name: "get",
+  stateMutability: "view",
+  inputs: [{ name: "key", type: "bytes32" }],
+  outputs: [{ name: "", type: "address" }]
+}] as const;
 
 const factoryAbi = factoryAbiJson as Abi;
 
@@ -77,19 +86,35 @@ export async function runLaunchPreflight(
     throw new Error("Invalid launch salt.");
   }
 
+  const factoryAddress = await publicClient.readContract({
+    address: REGISTRY,
+    abi: registryAbi,
+    functionName: "get",
+    args: [stringToHex("factory", { size: 32 })]
+  });
+
+  if (factoryAddress.toLowerCase() === ZERO_ADDRESS.toLowerCase()) {
+    throw new Error("Registry returned a zero Factory address.");
+  }
+
+  const factoryCode = await publicClient.getBytecode({ address: factoryAddress });
+  if (!factoryCode || factoryCode === "0x") {
+    throw new Error("Factory address from Registry has no contract bytecode.");
+  }
+
   const [enabled, launchFeeRaw, configRaw] = await Promise.all([
     publicClient.readContract({
-      address: FACTORY,
+      address: factoryAddress,
       abi: factoryAbi,
       functionName: "launchEnabled"
     }),
     publicClient.readContract({
-      address: FACTORY,
+      address: factoryAddress,
       abi: factoryAbi,
       functionName: "launchFee"
     }),
     publicClient.readContract({
-      address: FACTORY,
+      address: factoryAddress,
       abi: factoryAbi,
       functionName: "getConfig",
       args: [params.configId]
@@ -98,12 +123,49 @@ export async function runLaunchPreflight(
 
   const launchFee = launchFeeRaw as bigint;
   const config = configRaw as {
+    moduleSetId: bigint;
     exists: boolean;
     enabled: boolean;
     quote: Address;
     baseSupply: bigint;
     totalFeePips: bigint;
   };
+
+  const moduleSet = await publicClient.readContract({
+    address: factoryAddress,
+    abi: factoryAbi,
+    functionName: "getModuleSet",
+    args: [config.moduleSetId]
+  }) as {
+    hook: Address;
+    tokenMaster: Address;
+    splitterMaster: Address;
+    exists: boolean;
+  };
+
+  if (!moduleSet.exists) {
+    throw new Error("Selected Module Set does not exist.");
+  }
+
+  const moduleAddresses = [
+    moduleSet.hook,
+    moduleSet.tokenMaster,
+    moduleSet.splitterMaster
+  ];
+
+  for (const moduleAddress of moduleAddresses) {
+    if (moduleAddress.toLowerCase() === ZERO_ADDRESS.toLowerCase()) {
+      throw new Error("Module Set contains a zero module address.");
+    }
+
+    const moduleCode = await publicClient.getBytecode({
+      address: moduleAddress
+    });
+
+    if (!moduleCode || moduleCode === "0x") {
+      throw new Error("A Module Set contract has no bytecode.");
+    }
+  }
 
   if (!enabled) {
     throw new Error("Factory launch is currently disabled.");
@@ -134,7 +196,7 @@ export async function runLaunchPreflight(
   const value = launchFee + params.firstBuyAmount;
 
   const predictedToken = await publicClient.readContract({
-    address: FACTORY,
+    address: factoryAddress,
     abi: factoryAbi,
     functionName: "predictTokenAddress",
     args: [account, params.salt, params.configId]
@@ -142,20 +204,27 @@ export async function runLaunchPreflight(
 
   const simulation = await publicClient.simulateContract({
     account,
-    address: FACTORY,
+    address: factoryAddress,
     abi: factoryAbi,
     functionName: "launch",
     args: [params],
     value
   });
 
+  const [estimatedGas, gasPrice] = await Promise.all([publicClient.estimateContractGas({ account, address: factoryAddress, abi: factoryAbi, functionName: "launch", args: [params], value }), publicClient.getGasPrice()]);
+  const estimatedGasCost = estimatedGas * gasPrice;
+
   return {
+    factoryAddress,
     success: true as const,
     predictedToken,
     value,
     launchFee,
     firstBuyAmount: params.firstBuyAmount,
     configId: params.configId,
+    estimatedGas,
+    gasPrice,
+    estimatedGasCost,
     simulationResult: simulation.result
   };
 }

@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
 import LaunchConfigPanel, { type LaunchConfigSummary } from "./LaunchConfigPanel";
 import { uploadTokenMetadata } from "./metadata";
-import { createWalletClient, custom, defineChain, type Address, type Hex } from "viem";
+import { createWalletClient, custom, defineChain, formatEther, type Address, type Hex } from "viem";
 import { runLaunchPreflight, type LaunchParams } from "./LaunchPreflight";
+import { executeLaunch } from "./LaunchExecution";
 
 type Eip1193Provider = {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
@@ -64,10 +65,18 @@ function App() {
   const [isPreflightRunning, setIsPreflightRunning] = useState(false);
   const [preflightStatus, setPreflightStatus] = useState("");
   const [predictedToken, setPredictedToken] = useState("");
+  const [estimatedGas, setEstimatedGas] = useState("");
+  const [estimatedGasCost, setEstimatedGasCost] = useState("");
+  const [preparedLaunch, setPreparedLaunch] = useState<{ params: LaunchParams; factoryAddress: Address; expectedConfig: { baseSupply: bigint; totalFeePips: bigint; quoteAddress: Address } } | null>(null);
+  const [isLaunching, setIsLaunching] = useState(false);
+  const [launchStatus, setLaunchStatus] = useState("");
+  const [transactionHash, setTransactionHash] = useState("");
+  const [launchedToken, setLaunchedToken] = useState("");
   const handleLaunchConfigSelection = useCallback((config: LaunchConfigSummary | null) => {
     setLaunchConfig(config);
     setPreflightStatus("");
     setPredictedToken("");
+    setPreparedLaunch(null);
   }, []);
 
   const canPreview = useMemo(
@@ -88,6 +97,7 @@ function App() {
     setUploadStatus("");
     setPreflightStatus("");
     setPredictedToken("");
+    setPreparedLaunch(null);
   };
 
   const handleMetadataUpload = async () => {
@@ -186,24 +196,68 @@ function App() {
       };
 
       setPreflightStatus("Menjalankan simulasi kontrak...");
+      const expectedConfig = {
+        baseSupply: launchConfig.baseSupply,
+        totalFeePips: launchConfig.totalFeePips,
+        quoteAddress: launchConfig.quoteAddress as Address
+      };
       const result = await runLaunchPreflight(
         walletAddress as Address,
         params,
-        {
-          baseSupply: launchConfig.baseSupply,
-          totalFeePips: launchConfig.totalFeePips,
-          quoteAddress: launchConfig.quoteAddress as Address
-        }
+        expectedConfig
       );
+      setPreparedLaunch({
+        params,
+        factoryAddress: result.factoryAddress,
+        expectedConfig
+      });
+      setTransactionHash("");
+      setLaunchedToken("");
 
       setPredictedToken(String(result.predictedToken));
+      setEstimatedGas(result.estimatedGas.toString());
+      setEstimatedGasCost(formatEther(result.estimatedGasCost));
       setPreflightStatus("Simulasi berhasil. Tidak ada transaksi yang dikirim.");
     } catch (error) {
       console.error("[PREFLIGHT ERROR]", error);
       setPreflightStatus(error instanceof Error ? error.message : "Preflight gagal.");
       setPredictedToken("");
+      setEstimatedGas("");
+      setEstimatedGasCost("");
+      setPreparedLaunch(null);
     } finally {
       setIsPreflightRunning(false);
+    }
+  };
+
+  const handleLaunch = async () => {
+    if (!preparedLaunch || !walletAddress) {
+      setLaunchStatus("Jalankan Preflight dan hubungkan wallet terlebih dahulu.");
+      return;
+    }
+    const provider = getWalletProvider();
+    if (!provider) {
+      setLaunchStatus("Wallet tidak ditemukan.");
+      return;
+    }
+    try {
+      setIsLaunching(true);
+      setLaunchStatus("Memeriksa ulang Factory dan simulasi...");
+      const result = await executeLaunch(
+        provider,
+        walletAddress as Address,
+        preparedLaunch.params,
+        preparedLaunch.factoryAddress,
+        preparedLaunch.expectedConfig
+      );
+      setTransactionHash(result.transactionHash);
+      setLaunchedToken(result.token);
+      setLaunchStatus("Token berhasil diluncurkan dan event kontrak terverifikasi.");
+    } catch (error) {
+      console.error("[LAUNCH ERROR]", error);
+      setLaunchStatus(error instanceof Error ? error.message : "Launch gagal.");
+    } finally {
+      setIsLaunching(false);
     }
   };
 
@@ -442,7 +496,7 @@ function App() {
 
             <div className="review-safety">
               <ShieldCheck size={20} />
-              <div><strong>Review mode · No transaction will be sent</strong><p>Deployment is disabled. This page only displays your token details and the selected live Factory configuration.</p></div>
+              <div><strong>Launch review · Transaction requires wallet approval</strong><p>No transaction is sent until you complete Preflight and explicitly approve the Launch transaction in your wallet.</p></div>
             </div>
 
             <div className="review-safety">
@@ -459,6 +513,11 @@ function App() {
                 <strong>Preflight simulation</strong>
                 <p>{preflightStatus || "Jalankan pemeriksaan read-only sebelum mempertimbangkan deployment."}</p>
                 {predictedToken && <p className="review-address">Predicted token: {predictedToken}</p>}
+                {estimatedGas && <p>Estimated gas: {Number(estimatedGas).toLocaleString("en-US")}</p>}
+                {estimatedGasCost && <p>Estimated gas cost: {estimatedGasCost} HYPE</p>}
+                {launchStatus && <p>{launchStatus}</p>}
+                {transactionHash && <p className="review-address">Transaction: {transactionHash}</p>}
+                {launchedToken && <p className="review-address">Launched token: {launchedToken}</p>}
               </div>
             </div>
 
@@ -472,7 +531,7 @@ function App() {
                 {isPreflightRunning ? "Simulating..." : "Run Preflight Simulation"}
               </button>
               <button className="secondary-button" onClick={() => { setShowReview(false); document.getElementById("create-token")?.scrollIntoView({ behavior: "smooth" }); }}> <ArrowRight size={15} style={{ transform: "rotate(180deg)" }} /> Back to configuration</button>
-              <button className="disabled-button" disabled>Launch token <ArrowUpRight size={15} /></button>
+              <button className="primary-button" type="button" onClick={handleLaunch} disabled={!preparedLaunch || isLaunching || Boolean(transactionHash)}>{isLaunching ? "Launching..." : transactionHash ? "Launch successful" : "Launch token"} <ArrowUpRight size={15} /></button>
             </div>
           </section>
         )}
