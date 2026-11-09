@@ -3,7 +3,7 @@ import LaunchConfigPanel, { type LaunchConfigSummary } from "./LaunchConfigPanel
 import { uploadTokenMetadata } from "./metadata";
 import { createWalletClient, custom, defineChain, formatEther, parseEther, type Address, type Hex } from "viem";
 import { runLaunchPreflight, type LaunchParams } from "./LaunchPreflight";
-import { executeLaunch } from "./LaunchExecution";
+import { approveQuoteToken, executeLaunch } from "./LaunchExecution";
 
 type Eip1193Provider = {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
@@ -64,6 +64,8 @@ function App() {
   const [firstBuyInput, setFirstBuyInput] = useState("0");
   const [showReview, setShowReview] = useState(false);
   const [isPreflightRunning, setIsPreflightRunning] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [approvalStatus, setApprovalStatus] = useState("");
   const [preflightStatus, setPreflightStatus] = useState("");
   const [predictedToken, setPredictedToken] = useState("");
   const [estimatedGas, setEstimatedGas] = useState("");
@@ -78,6 +80,7 @@ function App() {
     setPreflightStatus("");
     setPredictedToken("");
     setPreparedLaunch(null);
+    setApprovalStatus("");
   }, []);
 
   const canPreview = useMemo(
@@ -125,6 +128,57 @@ function App() {
     }
   };
 
+  const handleApproveQuote = async () => {
+    if (!walletAddress || !launchConfig) {
+      setApprovalStatus("Hubungkan wallet dan pilih konfigurasi terlebih dahulu.");
+      return;
+    }
+    if (launchConfig.quoteAddress.toLowerCase() === "0x0000000000000000000000000000000000000000") {
+      setApprovalStatus("Konfigurasi HYPE tidak memerlukan approval ERC20.");
+      return;
+    }
+    const firstBuyValue = firstBuyInput.trim() || "0";
+    if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(firstBuyValue) || (firstBuyValue.includes(".") && firstBuyValue.split(".")[1].length > 18)) {
+      setApprovalStatus("First Buy harus berupa angka non-negatif dengan maksimal 18 desimal.");
+      return;
+    }
+    const amount = parseEther(firstBuyValue);
+    if (amount <= 0n) {
+      setApprovalStatus("Isi First Buy KNTQ lebih besar dari 0 untuk melakukan approval.");
+      return;
+    }
+    const provider = getWalletProvider();
+    if (!provider) {
+      setApprovalStatus("Wallet tidak ditemukan.");
+      return;
+    }
+    try {
+      setIsApproving(true);
+      setApprovalStatus("Memeriksa saldo dan allowance KNTQ...");
+      const expectedConfig = {
+        baseSupply: launchConfig.baseSupply,
+        totalFeePips: launchConfig.totalFeePips,
+        quoteAddress: launchConfig.quoteAddress as Address
+      };
+      const result = await approveQuoteToken(
+        provider,
+        walletAddress as Address,
+        amount,
+        expectedConfig
+      );
+      setPreparedLaunch(null);
+      setPreflightStatus("");
+      setApprovalStatus(result.alreadyApproved
+        ? "Allowance KNTQ sudah mencukupi. Silakan jalankan Preflight."
+        : "Approval KNTQ berhasil. Silakan jalankan Preflight kembali. Transaction: " + result.transactionHash);
+    } catch (error) {
+      console.error("[APPROVAL ERROR]", error);
+      setApprovalStatus(error instanceof Error ? error.message : "Approval gagal.");
+    } finally {
+      setIsApproving(false);
+    }
+  };
+
   const handlePreflight = async () => {
     console.log("[PREFLIGHT] Button clicked");
     setPreflightStatus("Preflight dimulai...");
@@ -166,7 +220,7 @@ function App() {
       ).join("")) as Hex;
 
       const firstBuyValue = firstBuyInput.trim() || "0";
-      if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(firstBuyValue) || (firstBuyValue.includes(".") && firstBuyValue.split(".")[1].length > 18)) throw new Error("First Buy harus berupa angka HYPE non-negatif dengan maksimal 18 angka desimal.");
+      if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(firstBuyValue) || (firstBuyValue.includes(".") && firstBuyValue.split(".")[1].length > 18)) throw new Error("First Buy harus berupa angka non-negatif dengan maksimal 18 angka desimal.");
       const firstBuyAmount = parseEther(firstBuyValue);
       const params: LaunchParams = {
         name: form.name.trim(),
@@ -411,7 +465,7 @@ function App() {
             ) : (
               <div className="studio-content">
                 <LaunchConfigPanel onSelectionChange={handleLaunchConfigSelection} />
-                <label>First Buy <span className="optional">Optional · HYPE</span><input type="number" min="0" step="any" value={firstBuyInput} onChange={(e) => { setFirstBuyInput(e.target.value); setPreparedLaunch(null); setPreflightStatus(""); setPredictedToken(""); setEstimatedGas(""); setEstimatedGasCost(""); setTransactionHash(""); setLaunchedToken(""); setLaunchStatus(""); }} placeholder="0" /><span className="optional">Initial buy executed in the launch transaction. Minimum token output: 0.</span></label>
+                <label>First Buy <span className="optional">Optional · {launchConfig?.quote ?? "HYPE"}</span><input type="number" min="0" step="any" value={firstBuyInput} onChange={(e) => { setFirstBuyInput(e.target.value); setPreparedLaunch(null); setApprovalStatus(""); setPreflightStatus(""); setPredictedToken(""); setEstimatedGas(""); setEstimatedGasCost(""); setTransactionHash(""); setLaunchedToken(""); setLaunchStatus(""); }} placeholder="0" /><span className="optional">Initial buy uses the selected quote asset. Minimum token output: 0.</span></label>
                 <div className="field-row">
                   <label>Token name<input value={form.name} maxLength={32} onChange={(e) => update("name", e.target.value)} placeholder="e.g. Montra Labs" /></label>
                   <label>Symbol<input value={form.symbol} maxLength={10} onChange={(e) => update("symbol", e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} placeholder="e.g. MLAB" /></label>
@@ -491,7 +545,7 @@ function App() {
                 <div className="review-line"><span>Base supply</span><b>{launchConfig?.supply ?? "—"}</b></div>
                 <div className="review-line"><span>Total fee</span><b>{launchConfig?.fee ?? "—"}</b></div>
                 <div className="review-line"><span>Quote asset</span><b>{launchConfig?.quote ?? "—"}</b></div>
-                <div className="review-line"><span>First Buy</span><b>{firstBuyInput.trim() || "0"} HYPE</b></div>
+                <div className="review-line"><span>First Buy</span><b>{firstBuyInput.trim() || "0"} {launchConfig?.quote ?? "HYPE"}</b></div>
                 <div className="review-divider" />
                 <div className="review-line"><span>Network</span><b>Elysium</b></div>
                 <div className="review-line"><span>Chain ID</span><b>99901</b></div>
@@ -515,6 +569,8 @@ function App() {
             <div className="review-safety">
               <ShieldCheck size={20} />
               <div>
+                <strong>Token approval</strong>
+                <p>{approvalStatus || "Untuk First Buy KNTQ, lakukan approval terlebih dahulu. HYPE tidak memerlukan approval ERC20."}</p>
                 <strong>Preflight simulation</strong>
                 <p>{preflightStatus || "Jalankan pemeriksaan read-only sebelum mempertimbangkan deployment."}</p>
                 {predictedToken && <p className="review-address">Predicted token: {predictedToken}</p>}
@@ -527,6 +583,16 @@ function App() {
             </div>
 
             <div className="review-actions">
+              {launchConfig && launchConfig.quoteAddress.toLowerCase() !== "0x0000000000000000000000000000000000000000" && (
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={handleApproveQuote}
+                  disabled={isApproving || !walletAddress || !launchConfig || Number(firstBuyInput) <= 0}
+                >
+                  {isApproving ? "Approving..." : "Approve " + launchConfig.quote}
+                </button>
+              )}
               <button
                 className="secondary-button"
                 type="button"

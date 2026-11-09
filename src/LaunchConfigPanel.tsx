@@ -3,6 +3,8 @@ import { createPublicClient, formatUnits, http } from "viem";
 
 const FACTORY = "0x38D3ef3A06D18fA3286Fb5dEAfe611be725fcD15" as const;
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const KNTQ_ADDRESS = "0xe45a355d9e9cAd2aD85F2d03E3eE3102A036acF0";
+const getQuoteSymbol = (address: string) => address.toLowerCase() === ZERO_ADDRESS.toLowerCase() ? "HYPE" : address.toLowerCase() === KNTQ_ADDRESS.toLowerCase() ? "KNTQ" : address;
 
 const factoryAbi = [
   {
@@ -136,7 +138,7 @@ export default function LaunchConfigPanel({ onSelectionChange }: Props) {
       id: selected.id,
       supply: Number(formatUnits(selected.baseSupply, 18)).toLocaleString("en-US", { maximumFractionDigits: 4 }),
       fee: `${(Number(selected.totalFeePips) / 10000).toLocaleString("en-US", { maximumFractionDigits: 2 })}%`,
-      quote: selected.quote.toLowerCase() === ZERO_ADDRESS.toLowerCase() ? "HYPE" : selected.quote,
+      quote: getQuoteSymbol(selected.quote),
       baseSupply: selected.baseSupply,
       totalFeePips: selected.totalFeePips,
       quoteAddress: selected.quote
@@ -150,7 +152,7 @@ export default function LaunchConfigPanel({ onSelectionChange }: Props) {
     ? `${(Number(selected.totalFeePips) / 10000).toLocaleString("en-US", { maximumFractionDigits: 2 })}%`
     : "—";
   const quote = selected
-    ? (selected.quote.toLowerCase() === ZERO_ADDRESS.toLowerCase() ? "HYPE" : selected.quote)
+    ? (getQuoteSymbol(selected.quote))
     : "—";
 
   return (
@@ -168,7 +170,7 @@ export default function LaunchConfigPanel({ onSelectionChange }: Props) {
           <select id="montra-config" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
             {configs.map((cfg) => (
               <option key={cfg.id} value={cfg.id}>
-                Tier {cfg.id + 1} · {Number(cfg.totalFeePips) / 10000}% fee · {Number(formatUnits(cfg.baseSupply, 18)).toLocaleString("en-US")} supply
+                Tier {cfg.id + 1} · {getQuoteSymbol(cfg.quote)} · {Number(cfg.totalFeePips) / 10000}% fee · {Number(formatUnits(cfg.baseSupply, 18)).toLocaleString("en-US")} supply
               </option>
             ))}
           </select>

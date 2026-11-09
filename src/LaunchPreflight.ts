@@ -2,6 +2,7 @@ import {
   createPublicClient,
   defineChain,
   http,
+  parseAbi,
   stringToHex,
   type Abi,
   type Address,
@@ -22,6 +23,11 @@ const registryAbi = [{
 }] as const;
 
 const factoryAbi = factoryAbiJson as Abi;
+
+const erc20Abi = parseAbi([
+  "function balanceOf(address owner) view returns (uint256)",
+  "function allowance(address owner, address spender) view returns (uint256)"
+]);
 
 const elysium = defineChain({
   id: 99901,
@@ -187,13 +193,33 @@ export async function runLaunchPreflight(
     throw new Error("Factory quote asset differs from the selected configuration.");
   }
 
-  if (config.quote.toLowerCase() !== ZERO_ADDRESS.toLowerCase()) {
-    throw new Error(
-      "This preflight currently supports native HYPE quote configurations only."
-    );
+  const isNativeQuote = config.quote.toLowerCase() === ZERO_ADDRESS.toLowerCase();
+
+  if (!isNativeQuote && params.firstBuyAmount > 0n) {
+    const [balance, allowance] = await Promise.all([
+      publicClient.readContract({
+        address: config.quote,
+        abi: erc20Abi,
+        functionName: "balanceOf",
+        args: [account]
+      }),
+      publicClient.readContract({
+        address: config.quote,
+        abi: erc20Abi,
+        functionName: "allowance",
+        args: [account, factoryAddress]
+      })
+    ]);
+
+    if (balance < params.firstBuyAmount) {
+      throw new Error("Saldo token quote tidak cukup untuk First Buy.");
+    }
+    if (allowance < params.firstBuyAmount) {
+      throw new Error("Allowance KNTQ belum cukup. Klik Approve KNTQ terlebih dahulu, lalu jalankan Preflight kembali.");
+    }
   }
 
-  const value = launchFee + params.firstBuyAmount;
+  const value = launchFee + (isNativeQuote ? params.firstBuyAmount : 0n);
 
   const predictedToken = await publicClient.readContract({
     address: factoryAddress,
