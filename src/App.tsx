@@ -4,10 +4,27 @@ import { uploadTokenMetadata } from "./metadata";
 import { createWalletClient, custom, defineChain, type Address, type Hex } from "viem";
 import { runLaunchPreflight, type LaunchParams } from "./LaunchPreflight";
 
+type Eip1193Provider = {
+  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+  providers?: Eip1193Provider[];
+  isOkxWallet?: boolean;
+  isOKXWallet?: boolean;
+};
+
 declare global {
   interface Window {
-    ethereum?: { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> };
+    ethereum?: Eip1193Provider;
+    okxwallet?: Eip1193Provider;
   }
+}
+
+function getWalletProvider(): Eip1193Provider | undefined {
+  if (window.okxwallet) return window.okxwallet;
+  const providers = window.ethereum?.providers;
+  const okxProvider = providers?.find(
+    (provider) => provider.isOkxWallet || provider.isOKXWallet
+  );
+  return okxProvider ?? window.ethereum;
 }
 import {
   ArrowRight, ArrowUpRight, Check, ExternalLink, Menu, ShieldCheck, Sparkles, Wallet, X
@@ -106,7 +123,8 @@ function App() {
       return;
     }
 
-    if (!window.ethereum) {
+    const provider = getWalletProvider();
+    if (!provider) {
       setPreflightStatus("Wallet tidak ditemukan.");
       return;
     }
@@ -123,7 +141,7 @@ function App() {
           nativeCurrency: { name: "HYPE", symbol: "HYPE", decimals: 18 },
           rpcUrls: { default: { http: ["https://rpc.montramarkets.xyz"] } }
         }),
-        transport: custom(window.ethereum as any)
+        transport: custom(provider as any)
       });
 
       const chainId = await walletClient.getChainId();
@@ -190,8 +208,9 @@ function App() {
   };
 
   const connectWallet = async () => {
-    if (!window.ethereum) {
-      setWalletStatus("Wallet not detected. Install MetaMask or another EVM wallet.");
+    const provider = getWalletProvider();
+    if (!provider) {
+      setWalletStatus("Wallet not detected. Please install an EVM wallet.");
       return;
     }
     try {
@@ -202,7 +221,10 @@ function App() {
         nativeCurrency: { name: "HYPE", symbol: "HYPE", decimals: 18 },
         rpcUrls: { default: { http: ["https://rpc.montramarkets.xyz"] } }
       });
-      const walletClient = createWalletClient({ chain: elysium, transport: custom(window.ethereum as any) });
+      const walletClient = createWalletClient({
+        chain: elysium,
+        transport: custom(provider as any)
+      });
       const accounts = await walletClient.requestAddresses();
       const chainId = await walletClient.getChainId();
       setWalletAddress(accounts[0] ?? "");
