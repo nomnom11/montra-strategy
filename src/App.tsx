@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import LaunchConfigPanel, { type LaunchConfigSummary } from "./LaunchConfigPanel";
 import { uploadTokenMetadata } from "./metadata";
-import { createWalletClient, custom, defineChain, formatEther, type Address, type Hex } from "viem";
+import { createWalletClient, custom, defineChain, formatEther, parseEther, type Address, type Hex } from "viem";
 import { runLaunchPreflight, type LaunchParams } from "./LaunchPreflight";
 import { executeLaunch } from "./LaunchExecution";
 
@@ -61,6 +61,7 @@ function App() {
   const [walletAddress, setWalletAddress] = useState("");
   const [walletStatus, setWalletStatus] = useState("Not connected");
   const [launchConfig, setLaunchConfig] = useState<LaunchConfigSummary | null>(null);
+  const [firstBuyInput, setFirstBuyInput] = useState("0");
   const [showReview, setShowReview] = useState(false);
   const [isPreflightRunning, setIsPreflightRunning] = useState(false);
   const [preflightStatus, setPreflightStatus] = useState("");
@@ -164,6 +165,9 @@ function App() {
         (byte) => byte.toString(16).padStart(2, "0")
       ).join("")) as Hex;
 
+      const firstBuyValue = firstBuyInput.trim() || "0";
+      if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(firstBuyValue) || (firstBuyValue.includes(".") && firstBuyValue.split(".")[1].length > 18)) throw new Error("First Buy harus berupa angka HYPE non-negatif dengan maksimal 18 angka desimal.");
+      const firstBuyAmount = parseEther(firstBuyValue);
       const params: LaunchParams = {
         name: form.name.trim(),
         symbol: form.symbol.trim(),
@@ -184,7 +188,7 @@ function App() {
         salt,
         feeRecipients: [],
         feeShares: [],
-        firstBuyAmount: 0n,
+        firstBuyAmount,
         firstBuyMinOut: 0n,
         permit: {
           deadline: 0n,
@@ -407,6 +411,7 @@ function App() {
             ) : (
               <div className="studio-content">
                 <LaunchConfigPanel onSelectionChange={handleLaunchConfigSelection} />
+                <label>First Buy <span className="optional">Optional · HYPE</span><input type="number" min="0" step="any" value={firstBuyInput} onChange={(e) => { setFirstBuyInput(e.target.value); setPreparedLaunch(null); setPreflightStatus(""); setPredictedToken(""); setEstimatedGas(""); setEstimatedGasCost(""); setTransactionHash(""); setLaunchedToken(""); setLaunchStatus(""); }} placeholder="0" /><span className="optional">Initial buy executed in the launch transaction. Minimum token output: 0.</span></label>
                 <div className="field-row">
                   <label>Token name<input value={form.name} maxLength={32} onChange={(e) => update("name", e.target.value)} placeholder="e.g. Montra Labs" /></label>
                   <label>Symbol<input value={form.symbol} maxLength={10} onChange={(e) => update("symbol", e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} placeholder="e.g. MLAB" /></label>
@@ -486,6 +491,7 @@ function App() {
                 <div className="review-line"><span>Base supply</span><b>{launchConfig?.supply ?? "—"}</b></div>
                 <div className="review-line"><span>Total fee</span><b>{launchConfig?.fee ?? "—"}</b></div>
                 <div className="review-line"><span>Quote asset</span><b>{launchConfig?.quote ?? "—"}</b></div>
+                <div className="review-line"><span>First Buy</span><b>{firstBuyInput.trim() || "0"} HYPE</b></div>
                 <div className="review-divider" />
                 <div className="review-line"><span>Network</span><b>Elysium</b></div>
                 <div className="review-line"><span>Chain ID</span><b>99901</b></div>
