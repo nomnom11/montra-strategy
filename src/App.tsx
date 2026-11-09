@@ -92,7 +92,6 @@ function App() {
 
   const update = (key: keyof TokenForm, value: string) => {
     setForm((current) => ({ ...current, [key]: value }));
-    setImageUri("");
     setMetadataUri("");
     setUploadStatus("");
     setPreflightStatus("");
