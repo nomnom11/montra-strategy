@@ -215,7 +215,7 @@ export async function runLaunchPreflight(
       throw new Error("Saldo token quote tidak cukup untuk First Buy.");
     }
     if (allowance < params.firstBuyAmount) {
-      throw new Error("Allowance KNTQ belum cukup. Klik Approve KNTQ terlebih dahulu, lalu jalankan Preflight kembali.");
+      throw new Error("Allowance token quote belum cukup. Klik tombol Approve sesuai quote terpilih terlebih dahulu, lalu jalankan Preflight kembali.");
     }
   }
 

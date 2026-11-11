@@ -144,7 +144,7 @@ function App() {
     }
     const amount = parseEther(firstBuyValue);
     if (amount <= 0n) {
-      setApprovalStatus("Isi First Buy KNTQ lebih besar dari 0 untuk melakukan approval.");
+      setApprovalStatus(`Isi First Buy ${launchConfig.quote} lebih besar dari 0 untuk melakukan approval.`);
       return;
     }
     const provider = getWalletProvider();
@@ -154,7 +154,7 @@ function App() {
     }
     try {
       setIsApproving(true);
-      setApprovalStatus("Memeriksa saldo dan allowance KNTQ...");
+      setApprovalStatus(`Memeriksa saldo dan allowance ${launchConfig.quote}...`);
       const expectedConfig = {
         baseSupply: launchConfig.baseSupply,
         totalFeePips: launchConfig.totalFeePips,
@@ -169,8 +169,8 @@ function App() {
       setPreparedLaunch(null);
       setPreflightStatus("");
       setApprovalStatus(result.alreadyApproved
-        ? "Allowance KNTQ sudah mencukupi. Silakan jalankan Preflight."
-        : "Approval KNTQ berhasil. Silakan jalankan Preflight kembali. Transaction: " + result.transactionHash);
+        ? `Allowance ${launchConfig.quote} sudah mencukupi. Silakan jalankan Preflight.`
+        : `Approval ${launchConfig.quote} berhasil. Silakan jalankan Preflight kembali. Transaction: ` + result.transactionHash);
     } catch (error) {
       console.error("[APPROVAL ERROR]", error);
       setApprovalStatus(error instanceof Error ? error.message : "Approval gagal.");
@@ -468,7 +468,7 @@ function App() {
                 <label>First Buy <span className="optional">Optional · {launchConfig?.quote ?? "HYPE"}</span><input type="number" min="0" step="any" value={firstBuyInput} onChange={(e) => { setFirstBuyInput(e.target.value); setPreparedLaunch(null); setApprovalStatus(""); setPreflightStatus(""); setPredictedToken(""); setEstimatedGas(""); setEstimatedGasCost(""); setTransactionHash(""); setLaunchedToken(""); setLaunchStatus(""); }} placeholder="0" /><span className="optional">Initial buy uses the selected quote asset. Minimum token output: 0.</span></label>
                 <div className="field-row">
                   <label>Token name<input value={form.name} maxLength={32} onChange={(e) => update("name", e.target.value)} placeholder="e.g. Montra Labs" /></label>
-                  <label>Symbol<input value={form.symbol} maxLength={10} onChange={(e) => update("symbol", e.target.value.replace(/[^a-zA-Z0-9#/=]/g, ""))} placeholder="e.g. MLAB" /></label>
+                  <label>Symbol<input value={form.symbol} onChange={(e) => update("symbol", Array.from(e.target.value.replace(/[^a-zA-Z0-9#/=\p{Emoji_Presentation}]/ug, "")).slice(0, 10).join(""))} placeholder="e.g. MLAB" /></label>
                 </div>
                 <label>Project description<textarea value={form.description} maxLength={240} onChange={(e) => update("description", e.target.value)} placeholder="What is your project about?" rows={3} /></label>
                 <label>Logo file <span className="optional">Optional · Phase 1 local selection only</span>
@@ -570,7 +570,7 @@ function App() {
               <ShieldCheck size={20} />
               <div>
                 <strong>Token approval</strong>
-                <p>{approvalStatus || "Untuk First Buy KNTQ, lakukan approval terlebih dahulu. HYPE tidak memerlukan approval ERC20."}</p>
+                <p>{approvalStatus || "Untuk First Buy, lakukan approval sesuai quote yang dipilih. HYPE tidak memerlukan approval ERC20."}</p>
                 <strong>Preflight simulation</strong>
                 <p>{preflightStatus || "Jalankan pemeriksaan read-only sebelum mempertimbangkan deployment."}</p>
                 {predictedToken && <p className="review-address">Predicted token: {predictedToken}</p>}

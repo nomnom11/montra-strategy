@@ -100,16 +100,28 @@ export default function LaunchConfigPanel({ onSelectionChange }: Props) {
         });
 
         const ids = Array.from({ length: Number(count) }, (_, id) => id);
-        const results = await Promise.all(ids.map(async (id) => {
-          const cfg = await client.readContract({
-            address: FACTORY,
-            abi: factoryAbi,
-            functionName: "getConfig",
-            args: [BigInt(id)]
-          }) as unknown as LaunchConfig;
+        const results: ConfigOption[] = [];
 
-          return { id, ...cfg };
-        }));
+        for (let i = 0; i < ids.length; i += 3) {
+          const batch = ids.slice(i, i + 3);
+          const batchResults = await Promise.all(
+            batch.map(async (id) => {
+              const cfg = await client.readContract({
+                address: FACTORY,
+                abi: factoryAbi,
+                functionName: "getConfig",
+                args: [BigInt(id)]
+              }) as unknown as LaunchConfig;
+
+              return { id, ...cfg };
+            })
+          );
+          results.push(...batchResults);
+
+          if (i + 3 < ids.length) {
+            await new Promise((resolve) => setTimeout(resolve, 300));
+          }
+        }
 
         const active = results.filter((cfg) => cfg.exists && cfg.enabled && SUPPORTED_QUOTES.has(cfg.quote.toLowerCase()));
         if (!cancelled) {

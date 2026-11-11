@@ -122,7 +122,7 @@ export async function approveQuoteToken(
   ]);
 
   if (balance < firstBuyAmount) {
-    throw new Error("Saldo KNTQ tidak cukup untuk First Buy.");
+    throw new Error("Saldo token quote tidak cukup untuk First Buy.");
   }
 
   if (allowance >= firstBuyAmount) {
@@ -140,7 +140,7 @@ export async function approveQuoteToken(
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
   if (receipt.status !== "success") {
-    throw new Error(`Approval KNTQ gagal. Hash: ${hash}`);
+    throw new Error(`Approval token quote gagal. Hash: ${hash}`);
   }
 
   const updatedAllowance = await publicClient.readContract({
