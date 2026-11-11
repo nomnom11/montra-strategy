@@ -4,10 +4,11 @@ import { createPublicClient, formatUnits, http } from "viem";
 const FACTORY = "0x38D3ef3A06D18fA3286Fb5dEAfe611be725fcD15" as const;
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const KNTQ_ADDRESS = "0xe45a355d9e9cAd2aD85F2d03E3eE3102A036acF0";
+const WNVDAx_ADDRESS = "0x11265018bF2d5a99fb71EFaE73aD670203C1dF44";
 const EQSPCX_ADDRESS = "0x8264c91CedFE6CC078116083d5a3e198c16B1898";
 const EQTSLA_ADDRESS = "0x7559191F12413d122493Fe43dE6d0B4544C6579F";
-const SUPPORTED_QUOTES = new Set([ZERO_ADDRESS.toLowerCase(),KNTQ_ADDRESS.toLowerCase(),EQSPCX_ADDRESS.toLowerCase(),EQTSLA_ADDRESS.toLowerCase()]);
-const getQuoteSymbol = (address: string) => { const a=address.toLowerCase(); if(a===ZERO_ADDRESS.toLowerCase()) return "HYPE"; if(a===KNTQ_ADDRESS.toLowerCase()) return "KNTQ"; if(a===EQSPCX_ADDRESS.toLowerCase()) return "EQSPCX"; if(a===EQTSLA_ADDRESS.toLowerCase()) return "EQTSLA"; return address; };
+const SUPPORTED_QUOTES = new Set([ZERO_ADDRESS.toLowerCase(),KNTQ_ADDRESS.toLowerCase(),WNVDAx_ADDRESS.toLowerCase(),EQSPCX_ADDRESS.toLowerCase(),EQTSLA_ADDRESS.toLowerCase()]);
+const getQuoteSymbol = (address: string) => { const a=address.toLowerCase(); if(a===ZERO_ADDRESS.toLowerCase()) return "HYPE"; if(a===KNTQ_ADDRESS.toLowerCase()) return "KNTQ"; if(a===WNVDAx_ADDRESS.toLowerCase()) return "wNVDAx"; if(a===EQSPCX_ADDRESS.toLowerCase()) return "EQSPCX"; if(a===EQTSLA_ADDRESS.toLowerCase()) return "EQTSLA"; return address; };
 
 const factoryAbi = [
   {
