@@ -6,6 +6,7 @@ import {
   defineChain,
   http,
   parseAbi,
+  parseUnits,
   stringToHex,
   type Abi,
   type Address,
@@ -49,8 +50,32 @@ const publicClient = createPublicClient({
   transport: http("https://rpc.montramarkets.xyz")
 });
 
+export async function parseQuoteAmount(value: string, quoteAddress: Address): Promise<bigint> {
+  if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(value)) {
+    throw new Error("First Buy harus berupa angka yang valid.");
+  }
+
+  const decimals = quoteAddress.toLowerCase() === ZERO_ADDRESS.toLowerCase()
+    ? 18
+    : await publicClient.readContract({
+        address: quoteAddress,
+        abi: quoteDecimalsAbi,
+        functionName: "decimals"
+      });
+
+  if (value.includes(".") && value.split(".")[1].length > decimals) {
+    throw new Error(`Maksimal ${decimals} angka desimal.`);
+  }
+
+  return parseUnits(value, decimals);
+}
+
 const registryAbi = parseAbi([
   "function get(bytes32 key) view returns (address)"
+]);
+
+const quoteDecimalsAbi = parseAbi([
+  "function decimals() view returns (uint8)"
 ]);
 
 const erc20Abi = parseAbi([

@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
 import LaunchConfigPanel, { type LaunchConfigSummary } from "./LaunchConfigPanel";
 import { uploadTokenMetadata } from "./metadata";
-import { createWalletClient, custom, defineChain, formatEther, parseEther, type Address, type Hex } from "viem";
+import { createWalletClient, custom, defineChain, formatEther, type Address, type Hex } from "viem";
 import { runLaunchPreflight, type LaunchParams } from "./LaunchPreflight";
-import { approveQuoteToken, executeLaunch } from "./LaunchExecution";
+import { approveQuoteToken, executeLaunch, parseQuoteAmount } from "./LaunchExecution";
 
 type Eip1193Provider = {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
@@ -142,7 +142,7 @@ function App() {
       setApprovalStatus("First Buy harus berupa angka non-negatif dengan maksimal 18 desimal.");
       return;
     }
-    const amount = parseEther(firstBuyValue);
+    const amount = await parseQuoteAmount(firstBuyValue, launchConfig.quoteAddress as Address);
     if (amount <= 0n) {
       setApprovalStatus(`Isi First Buy ${launchConfig.quote} lebih besar dari 0 untuk melakukan approval.`);
       return;
@@ -221,7 +221,7 @@ function App() {
 
       const firstBuyValue = firstBuyInput.trim() || "0";
       if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(firstBuyValue) || (firstBuyValue.includes(".") && firstBuyValue.split(".")[1].length > 18)) throw new Error("First Buy harus berupa angka non-negatif dengan maksimal 18 angka desimal.");
-      const firstBuyAmount = parseEther(firstBuyValue);
+      const firstBuyAmount = await parseQuoteAmount(firstBuyValue, launchConfig.quoteAddress as Address);
       const params: LaunchParams = {
         name: form.name.trim(),
         symbol: form.symbol.trim(),
