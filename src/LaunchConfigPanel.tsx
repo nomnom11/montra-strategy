@@ -4,7 +4,10 @@ import { createPublicClient, formatUnits, http } from "viem";
 const FACTORY = "0x38D3ef3A06D18fA3286Fb5dEAfe611be725fcD15" as const;
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const KNTQ_ADDRESS = "0xe45a355d9e9cAd2aD85F2d03E3eE3102A036acF0";
-const getQuoteSymbol = (address: string) => address.toLowerCase() === ZERO_ADDRESS.toLowerCase() ? "HYPE" : address.toLowerCase() === KNTQ_ADDRESS.toLowerCase() ? "KNTQ" : address;
+const EQSPCX_ADDRESS = "0x8264c91CedFE6CC078116083d5a3e198c16B1898";
+const EQTSLA_ADDRESS = "0x7559191F12413d122493Fe43dE6d0B4544C6579F";
+const SUPPORTED_QUOTES = new Set([ZERO_ADDRESS.toLowerCase(),KNTQ_ADDRESS.toLowerCase(),EQSPCX_ADDRESS.toLowerCase(),EQTSLA_ADDRESS.toLowerCase()]);
+const getQuoteSymbol = (address: string) => { const a=address.toLowerCase(); if(a===ZERO_ADDRESS.toLowerCase()) return "HYPE"; if(a===KNTQ_ADDRESS.toLowerCase()) return "KNTQ"; if(a===EQSPCX_ADDRESS.toLowerCase()) return "EQSPCX"; if(a===EQTSLA_ADDRESS.toLowerCase()) return "EQTSLA"; return address; };
 
 const factoryAbi = [
   {
@@ -108,7 +111,7 @@ export default function LaunchConfigPanel({ onSelectionChange }: Props) {
           return { id, ...cfg };
         }));
 
-        const active = results.filter((cfg) => cfg.exists && cfg.enabled);
+        const active = results.filter((cfg) => cfg.exists && cfg.enabled && SUPPORTED_QUOTES.has(cfg.quote.toLowerCase()));
         if (!cancelled) {
           setConfigs(active);
           setSelectedId(active.length ? String(active[0].id) : "");
