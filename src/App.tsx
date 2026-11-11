@@ -468,7 +468,7 @@ function App() {
                 <label>First Buy <span className="optional">Optional · {launchConfig?.quote ?? "HYPE"}</span><input type="number" min="0" step="any" value={firstBuyInput} onChange={(e) => { setFirstBuyInput(e.target.value); setPreparedLaunch(null); setApprovalStatus(""); setPreflightStatus(""); setPredictedToken(""); setEstimatedGas(""); setEstimatedGasCost(""); setTransactionHash(""); setLaunchedToken(""); setLaunchStatus(""); }} placeholder="0" /><span className="optional">Initial buy uses the selected quote asset. Minimum token output: 0.</span></label>
                 <div className="field-row">
                   <label>Token name<input value={form.name} maxLength={32} onChange={(e) => update("name", e.target.value)} placeholder="e.g. Montra Labs" /></label>
-                  <label>Symbol<input value={form.symbol} maxLength={10} onChange={(e) => update("symbol", e.target.value.replace(/[^a-zA-Z0-9]/g, ""))} placeholder="e.g. MLAB" /></label>
+                  <label>Symbol<input value={form.symbol} maxLength={10} onChange={(e) => update("symbol", e.target.value.replace(/[^a-zA-Z0-9#/]/g, ""))} placeholder="e.g. MLAB" /></label>
                 </div>
                 <label>Project description<textarea value={form.description} maxLength={240} onChange={(e) => update("description", e.target.value)} placeholder="What is your project about?" rows={3} /></label>
                 <label>Logo file <span className="optional">Optional · Phase 1 local selection only</span>
