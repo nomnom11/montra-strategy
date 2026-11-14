@@ -222,6 +222,10 @@ function App() {
       const firstBuyValue = firstBuyInput.trim() || "0";
       if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(firstBuyValue) || (firstBuyValue.includes(".") && firstBuyValue.split(".")[1].length > 18)) throw new Error("First Buy harus berupa angka non-negatif dengan maksimal 18 angka desimal.");
       const firstBuyAmount = await parseQuoteAmount(firstBuyValue, launchConfig.quoteAddress as Address);
+      if (!Number.isSafeInteger(launchConfig.id) || launchConfig.id < 0) {
+        throw new Error("ID konfigurasi Factory tidak valid. Muat ulang halaman dan pilih konfigurasi yang tersedia.");
+      }
+
       const params: LaunchParams = {
         name: form.name.trim(),
         symbol: form.symbol.trim(),
